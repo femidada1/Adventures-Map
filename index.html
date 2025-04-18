@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Saskatoon Adventures</title>
+    
+    <!-- Leaflet CSS from CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        header {
+            background-color: #3a539b;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+        
+        footer {
+            background-color: #3a539b;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-style: italic;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+        }
+        
+        #password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        #password-box {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 80%;
+        }
+        
+        #password-box h2 {
+            color: #3a539b;
+            margin-top: 0;
+        }
+        
+        #password-form {
+            margin: 20px 0;
+        }
+        
+        #password-input {
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        #submit-btn {
+            padding: 10px 20px;
+            background-color: #3a539b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #submit-btn:hover {
+            background-color: #283b69;
+        }
+        
+        #error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .memory-popup {
+            text-align: center;
+            font-size: 1.1em;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="password-overlay">
+        <div id="password-box">
+            <h2>Our Special Places</h2>
+            <p>Please enter the password to view our map of memories.</p>
+            <div id="password-form">
+                <input type="password" id="password-input" placeholder="Enter password...">
+                <button id="submit-btn">Enter</button>
+            </div>
+            <div id="error-message">Incorrect password. Try again.</div>
+        </div>
+    </div>
+
+    <header>
+        <h1>Our Saskatoon Adventures</h1>
+    </header>
+    
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+    
+    <footer>
+        <p>Many more to come...</p>
+    </footer>
+
+    <!-- Leaflet JS from CDN - using a specific version that's known to be reliable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    
+    <script>
+        // Password verification
+        const correctPassword = "youreok"; //
+        const passwordOverlay = document.getElementById('password-overlay');
+        const passwordForm = document.getElementById('password-form');
+        const passwordInput = document.getElementById('password-input');
+        const errorMessage = document.getElementById('error-message');
+        
+        // Handle form submission
+        passwordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            checkPassword();
+        });
+        
+        // Handle button click
+        document.getElementById('submit-btn').addEventListener('click', function() {
+            checkPassword();
+        });
+        
+        function checkPassword() {
+            if (passwordInput.value === correctPassword) {
+                passwordOverlay.style.display = 'none';
+                // Small delay to ensure the map container is visible
+                setTimeout(initMap, 100);
+            } else {
+                errorMessage.style.display = 'block';
+                passwordInput.value = '';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Map initialization
+        let map;
+        
+        function initMap() {
+            try {
+                // Check if map is already initialized
+                if (map) {
+                    map.remove();
+                }
+                
+                // Create map centered on Saskatoon
+                map = L.map('map', {
+                    center: [52.1332, -106.6700],
+                    zoom: 13,
+                    minZoom: 10,
+                    maxZoom: 18
+                });
+                
+                // Add Carto basemap (more reliable than OpenStreetMap for some regions)
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(map);
+                
+                // Define locations with coordinates and memories
+                const locations = [
+    
+    {
+        name: "SaskTel Centre",
+        coordinates: [52.189, -106.679], // :contentReference[oaicite:1]{index=1}
+        memory: "Monster Trucks, Baby"
+    },
+    {
+        name: "Hudsons",
+        coordinates: [52.12656, -106.6611], // :contentReference[oaicite:2]{index=2}
+        memory: "Come with me - I'm not wierd"
+    },
+    {
+        name: "Outlaws",
+        coordinates: [52.13667, -106.66944], // :contentReference[oaicite:3]{index=3}
+        memory: "Paddle shots and 'Your boyfriends jacked, bro.' "
+    },
+    {
+        name: "Prairieland Park",
+        coordinates: [52.105, -106.667], // :contentReference[oaicite:4]{index=4}
+        memory: "Mock Wedding. Thanks for forcing it on me"
+    },
+    {
+        name: "Restaurant 224",
+        coordinates: [52.12636, -106.66296], // :contentReference[oaicite:5]{index=5}
+        memory: "Date #1. Food was mid, my date wasn't"
+    },
+    {
+        name: "DQ on 8th Street",
+        coordinates: [52.123, -106.628], // :contentReference[oaicite:6]{index=6}
+        memory: "Smile for the Camera"
+    },
+    {
+        name: "University of Saskatchewan Grad House",
+        coordinates: [52.12533704544875, -106.63353868381806], // :contentReference[oaicite:7]{index=7}
+        memory: "Nothing else to be said here. Great Time"
+    },
+    {
+        name: "UNA Pizza",
+        coordinates: [52.118, -106.659], // :contentReference[oaicite:8]{index=8}
+        memory: "Still the best pizza I've had"
+    },
+    {
+        name: "Five Guys",
+        coordinates: [52.11460880544277, -106.62836707522624], // :contentReference[oaicite:9]{index=9}
+        memory: ""
+    },
+    {
+        name: "Mar's Mini Golf",
+        coordinates: [52.13703529727461, -106.66195725783412], // :contentReference[oaicite:10]{index=10}
+        memory: "Could the group in front of us move any slower?"
+    },
+    {
+        name: "Blanco Cantina",
+        coordinates: [52.11545934407899, -106.63404708687669], // :contentReference[oaicite:11]{index=11}
+        memory: "Thanks for paying, mama"
+    },
+    {
+        name: "Remai Modern",
+        coordinates: [52.123042651141866, -106.66701770221621], // :contentReference[oaicite:12]{index=12}
+        memory: "Is this good??"
+    },
+    {
+        name: "Landmark Cinemas",
+        coordinates: [52.13374882597995, -106.55573938872061], // :contentReference[oaicite:13]{index=13}
+        memory: "Great Movies with a great Person"
+    },
+    {
+        name: "The Roxy",
+        coordinates: [52.12648415945907, -106.67421524249741], // 
+        memory: "Great Movies with a great Person"
+    },
+    {
+        name: "Yip Hong's Dim Sum",
+        coordinates: [52.08696216197391, -106.62596933105277], // Coordinates not found
+        memory: "Absolute Fire"
+    },
+    {
+        name: "Academy Studios",
+        coordinates: [52.115173803522424, -106.6436227022165], // Coordinates not found
+        memory: "Lets do another one- this time, smile with teeth"
+    },
+    {
+        name: "Dlish By Tish",
+        coordinates: [52.12195434016845, -106.65160383779876], // Coordinates not found
+        memory: " Do you want to go study?"
+    },
+    {
+        name: "The Cave",
+        coordinates: [52.1145391594433, -106.61422491755643], // :contentReference[oaicite:14]{index=14}
+        memory: "See Restuarant 224"
+    },
+    {
+        name: "Pink Cadillac",
+        coordinates: [52.114707877719354, -106.6157758598865], // Coordinates not found
+        memory: "Rude waiter (apparently), but turns out you like me."
+    },
+    {
+        name: "Saskatoon Airport",
+        coordinates: [52.170, -106.700], // :contentReference[oaicite:15]{index=15}
+        memory: "Thanks for getting me."
+    },
+    {
+        name: "Taste of Syria",
+        coordinates: [52.09667996829047, -106.65599293105225], // Coordinates not found
+        memory: "Donaire Poutine ???"
+    },
+    {
+        name: "Prairie Donair Downtown",
+        coordinates: [52.131, -106.662], // Coordinates not found
+        memory: "We kept this place open"
+    },
+    
+    {
+        name: "Crumbl - Brighton",
+        coordinates: [52.13219493149235, -106.5503030598857], // :contentReference[oaicite:16]{index=16}
+        memory: "Button up, please."
+    },
+    {
+        name: "Fuddruckers",
+        coordinates: [52.11450785956816, -106.61192673105157], // Coordinates not found
+        memory: "Umm... Let's come back later"
+    },
+    {
+        name: "Fuddruckers Arcade",
+        coordinates: [52.11448803821553, -106.61121862804382], // Coordinates not found
+        memory: "Lets come back later... again"
+    },
+    {
+        name: "University of Saskatchewan",
+        coordinates: [52.13378083668908, -106.6314800838177], // :contentReference[oaicite:17]{index=17}
+        memory: "Campus Walk?"
+    },
+    {
+        name: "Fable Ice Cream & Espresso",
+        coordinates: [52.12063739908764, -106.68178641080853],
+        memory: "Great Ice Cream"
+    },
+    {
+        name: "The Stoked Centre",
+        coordinates: [52.13263027265448, -106.55683865804104], 
+        memory: "Real Formula 1 racer"
+    },
+    {
+        name: "Enchanted Forest",
+        coordinates: [52.15311087454485, -106.5863430175547], 
+        memory: "Thanks for taking me"
+    },
+    {
+        name: "Green Room",
+        coordinates: [52.126709464023286, -106.66539845313838], 
+        memory: "Good Music"
+    },
+    {
+        name: "Schmata",
+        coordinates: [52.12727591687344, -106.66520495414773], 
+        memory: "Do you need anything ?"
+    }
+];
+
+                
+                // Add markers to map
+                locations.forEach(location => {
+                    // Create marker
+                    const marker = L.marker(location.coordinates).addTo(map);
+                    
+                    // Create popup with location name and memory
+                    const popupContent = `
+                        <div class="memory-popup">
+                            <strong>${location.name}</strong><br>
+                            ${location.memory}
+                        </div>
+                    `;
+                    
+                    // Bind popup to marker
+                    marker.bindPopup(popupContent);
+                    
+                    // Show popup on hover
+                    marker.on('mouseover', function() {
+                        this.openPopup();
+                    });
+                });
+                
+                // Force a resize event to ensure map renders correctly
+                setTimeout(function() {
+                    window.dispatchEvent(new Event('resize'));
+                }, 500);
+                
+                console.log('Map initialized successfully');
+            } catch (error) {
+                console.error('Error initializing map:', error);
+            }
+        }
+        
+        // Allow users to bypass the password in case of issues (for testing)
+        window.skipPassword = function() {
+            passwordOverlay.style.display = 'none';
+            setTimeout(initMap, 100);
+        };
+    </script>
+</body>
+</html>
